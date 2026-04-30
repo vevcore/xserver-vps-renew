@@ -13,14 +13,14 @@
 
 | Secret 名称 | 必需 | 用途 |
 | --- | --- | --- |
-| `GHCR_TOKEN` | 是 | 拉取镜像 token |
-| `XSERVER_EMAIL` | 是 | 续期登录邮箱 |
-| `XSERVER_PASSWORD` | 是 | 续期登录密码 |
-| `XSERVER_VPS_ID` | 是 | VPS ID |
-| `SING_BOX_CONFIG_JSON` | 否 | sing-box 配置的完整 JSON 内容 |
-| `TELEGRAM_BOT_TOKEN` | 否 | Telegram 通知机器人 token |
-| `TELEGRAM_CHAT_ID` | 否 | Telegram 通知聊天 ID |
-| `LOG_ENC_PASSPHRASE` | 否 | 日志文件的加密口令；未设置则跳过产物生成与上传 |
+| `GHCR_TOKEN` | ✔ | 拉取镜像 token |
+| `XSERVER_EMAIL` | ✔ | 续期登录邮箱 |
+| `XSERVER_PASSWORD` | ✔ | 续期登录密码 |
+| `XSERVER_VPS_ID` | ✔ | VPS ID |
+| `SING_BOX_CONFIG_JSON` | ✖ | sing-box 配置的完整 JSON 内容 |
+| `TELEGRAM_BOT_TOKEN` | ✖ | Telegram 通知机器人 token |
+| `TELEGRAM_CHAT_ID` | ✖ | Telegram 通知聊天 ID |
+| `LOG_ENC_PASSPHRASE` | ✖ | 日志文件的加密口令；未设置则跳过产物生成与上传 |
 
 ## 日志产物
 
@@ -28,8 +28,8 @@
 
 - 文件名：`logs-<ts>.7z`
 - `ts` 格式（UTC）：`YYYYMMDDTHHMMSSZ`，例如 `logs-20260429T020000Z.7z`
-- 加密方式：7z（隐藏文件名/目录结构）
-- 保留策略：`retention-days: 30`（自动过期删除）
+- 加密方式：7z 加密压缩（需要口令才能查看）
+- 保留时间：保存 30 天，之后自动删除
 
 ### 下载与查看
 
