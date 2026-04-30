@@ -1,0 +1,20 @@
+services:
+  xserver-vps-renew-engine:
+    image: ghcr.io/vevcore/xserver-vps-renew-engine
+    container_name: xserver-vps-renew-engine
+    network_mode: bridge
+    restart: no
+    volumes:
+      - './sing-box:/etc/sing-box'
+      - './logs:/app/logs'
+    environment:
+      - 'XSERVER_EMAIL=${XSERVER_EMAIL}'
+      - 'XSERVER_PASSWORD=${XSERVER_PASSWORD}'
+      - 'XSERVER_VPS_ID=${XSERVER_VPS_ID}'
+      - 'TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}'
+      - 'TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}'
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"

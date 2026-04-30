@@ -1,0 +1,119 @@
+name: XServer VPS Renew
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 每天 UTC 02:00 运行（北京时间 10:00）
+    - cron: "0 2 * * *"
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  renew:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: vevcore
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Create sing-box config.json from secret
+        env:
+          SING_BOX_CONFIG_JSON: ${{ secrets.SING_BOX_CONFIG_JSON }}
+        run: |
+          if [ -z "${SING_BOX_CONFIG_JSON:-}" ]; then
+            echo "No SING_BOX_CONFIG_JSON configured; skip creating sing-box/config.json"
+            exit 0
+          fi
+          mkdir -p sing-box
+          printf '%s' "$SING_BOX_CONFIG_JSON" > sing-box/config.json
+
+      - name: Start renew job with docker compose
+        env:
+          XSERVER_EMAIL: ${{ secrets.XSERVER_EMAIL }}
+          XSERVER_PASSWORD: ${{ secrets.XSERVER_PASSWORD }}
+          XSERVER_VPS_ID: ${{ secrets.XSERVER_VPS_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          docker compose pull --quiet
+          docker compose up -d --remove-orphans
+          container_id=$(docker compose ps -q xserver-vps-renew-engine)
+          exit_code=$(docker wait "$container_id")
+          if [ "$exit_code" -ne 0 ]; then
+            echo "Renew task failed with exit code: $exit_code"
+            exit "$exit_code"
+          fi
+
+      - name: Cleanup compose resources
+        if: always()
+        run: |
+          docker compose down --remove-orphans
+
+      - name: Pack and encrypt logs (7z)
+        id: pack_logs
+        if: always()
+        env:
+          LOG_ENC_PASSPHRASE: ${{ secrets.LOG_ENC_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${LOG_ENC_PASSPHRASE:-}" ]; then
+            echo "No LOG_ENC_PASSPHRASE configured; skip logs artifact"
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ ! -d "logs" ]; then
+            echo "No ./logs directory found; skip logs artifact"
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! command -v 7z >/dev/null 2>&1; then
+            sudo apt-get update -y
+            sudo apt-get install -y p7zip-full
+          fi
+
+          mkdir -p artifacts
+          ts="$(date -u +"%Y%m%dT%H%M%SZ")"
+          archive_name="logs-${ts}.7z"
+          # -mhe=on: encrypt file headers so filenames / directory structure are not visible.
+          7z a -t7z -mx=9 -mhe=on -p"$LOG_ENC_PASSPHRASE" "artifacts/$archive_name" "./logs/*" >/dev/null
+          echo "ts=$ts" >> "$GITHUB_OUTPUT"
+          echo "archive_name=$archive_name" >> "$GITHUB_OUTPUT"
+          echo "upload=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload encrypted logs artifact
+        if: always() && steps.pack_logs.outputs.upload == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ steps.pack_logs.outputs.ts }}
+          path: artifacts/${{ steps.pack_logs.outputs.archive_name }}
+          retention-days: 30
+
+      - name: Update last build time file
+        if: always()
+        run: |
+          echo "Last build time (UTC): $(date -u +"%Y-%m-%d %H:%M:%S")" > LAST_BUILD_TIME.txt
+
+      - name: Commit last build time
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add LAST_BUILD_TIME.txt
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: update last build time"
+            git push
+          fi
