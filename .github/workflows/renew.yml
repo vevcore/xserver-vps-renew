@@ -46,7 +46,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          docker compose pull --quiet
+          docker compose pull
           docker compose up -d --remove-orphans
           container_id=$(docker compose ps -q xserver-vps-renew-engine)
           exit_code=$(docker wait "$container_id")
