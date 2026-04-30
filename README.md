@@ -17,7 +17,7 @@
 | `XSERVER_EMAIL` | ✔ | 续期登录邮箱 |
 | `XSERVER_PASSWORD` | ✔ | 续期登录密码 |
 | `XSERVER_VPS_ID` | ✔ | VPS ID |
-| `SING_BOX_CONFIG_JSON` | ✖ | sing-box 配置的完整 JSON 内容 |
+| `SING_BOX_CONFIG_JSON` | ✖ | sing-box 客户端配置的完整 JSON 内容 |
 | `TELEGRAM_BOT_TOKEN` | ✖ | Telegram 通知机器人 token |
 | `TELEGRAM_CHAT_ID` | ✖ | Telegram 通知聊天 ID |
 | `LOG_ENC_PASSPHRASE` | ✖ | 日志文件的加密口令；未设置则跳过产物生成与上传 |
