@@ -4,8 +4,6 @@
 
 ## 工作流触发方式
 
-工作流文件：`.github/workflows/renew.yml`
-
 - **定时触发**：每天 UTC `02:00`（北京时间 `10:00`）
 - **手动触发**：GitHub 仓库 → `Actions` → `XServer VPS Renew` → `Run workflow`
 
